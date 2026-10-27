@@ -53,7 +53,10 @@ Use clear, consistent Dart names: files and folders in `snake_case.dart`, types 
 2. Check the relevant SwiftDrop requirement and confirm the API contract with the backend owner. The documentation currently has differing real-time endpoint descriptions; do not guess an endpoint or authentication rule.
 3. Sketch the screen flow and data model. Identify loading, empty, success, validation, and network-error states before wiring the UI.
 4. Implement a small vertical slice: screen/widget → feature state/controller → repository → API/data source. Add only the package dependencies the team has agreed to use.
-5. Keep access/refresh tokens in platform secure storage once authentication is implemented. Never log tokens or commit credentials. Put environment-specific URLs behind a configuration boundary; an Android emulator can usually reach the host at `10.0.2.2`.
+5. Keep rotating refresh tokens in platform secure storage and short-lived access
+   tokens in session memory. Never log credentials. Put deployment URLs behind
+   the configuration boundary and use trusted HTTPS; do not add cleartext or
+   certificate-validation exceptions for emulator development.
 6. Add tests alongside the behavior: model/repository unit tests and widget tests for important UI states. Keep tests in the mirrored `test/` path.
 7. Before review, format and check the change:
 
@@ -68,3 +71,9 @@ Use clear, consistent Dart names: files and folders in `snake_case.dart`, types 
 ## Team decisions to make before feature work
 
 Choose one shared navigation approach, state-management approach, and HTTP client as a group before adding dependencies. Keep those choices and package versions consistent across branches. The project documentation specifies Flutter/Dart and shared backend APIs, but it does not prescribe these Flutter architecture packages.
+
+The Identity slice follows the existing booking branch's built-in Material
+navigation, ChangeNotifier/ValueNotifier patterns and `http` transport. Its only
+additional platform packages provide native Google sign-in and secure refresh
+storage. Other features should integrate through the shared session/transport
+ports instead of adding another credential owner.

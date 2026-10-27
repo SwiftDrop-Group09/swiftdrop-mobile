@@ -1,6 +1,10 @@
 # SwiftDrop Mobile
 
-Flutter application for the SwiftDrop group project. The planned app supports customer and courier workflows and uses the shared SwiftDrop backend APIs. The current source is the initial Flutter scaffold; product screens and API integrations have not been implemented yet.
+Flutter Customer/Courier Identity client for SwiftDrop. This branch implements
+local and Google authentication, session restoration/rotation, own-profile editing,
+explicit Google linking and logout. Customer/Courier use one session owner; the
+Courier mode requires an actual server-assigned role and grants no privileges.
+See [Identity implementation and verification](docs/identity-handoff.md).
 
 ## Requirements
 
@@ -19,25 +23,34 @@ flutter devices
 
 Resolve Android toolchain issues reported by `flutter doctor` before building. See [Flutter's Android setup guide](https://docs.flutter.dev/platform-integration/android/setup?tab=virtual) for current installation steps.
 
-## Run the starter app
+## Run the Identity client
 
 From this folder:
 
 ```powershell
 flutter pub get
 flutter devices
-flutter run
+flutter run --dart-define=API_BASE_URL=https://gateway.example.test --dart-define=APP_MODE=customer
 ```
 
-To select a device explicitly, use `flutter run -d <device-id>`. For an Android emulator, the host computer is normally reachable at `10.0.2.2`; a physical device should use the computer's reachable LAN address. The backend gateway is documented at port `5000`. The starter scaffold does not yet read an API base URL, so configure one in app code before expecting API calls to work.
+Replace the example origin with the team's reachable, trusted HTTPS Gateway
+origin. Select an Android device with `-d` when needed; the SDK and emulator must
+be installed first. Use `APP_MODE=courier` for the same Identity/profile flow with
+Courier authorization status. HTTP, embedded URL credentials, and API subpaths
+in the origin are rejected. No cleartext/TLS-validation exception is provided.
 
-When configuration support is added, pass local values without committing them, for example:
+Google is optional for local password authentication. Set public
+`GOOGLE_SERVER_CLIENT_ID` to the configured Web OAuth ID and register the Android
+package/signing fingerprints with Google. iOS additionally needs
+`GOOGLE_IOS_CLIENT_ID`, its URL scheme and Keychain host setup. No client secret
+belongs in these values. Without the audience configuration Google buttons are
+disabled. Browser/desktop authentication is intentionally unsupported; use React
+for the browser.
 
-```powershell
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
-```
-
-Never commit access tokens, Google credentials, signing keys, or local `.env` files. Do not put private credentials in `--dart-define`; values compiled into an app are not secret.
+Never commit tokens, private signing keys or local secrets. Do not put private
+credentials in `--dart-define`; compiled configuration is not secret. Refresh
+tokens use native secure storage; access tokens remain in memory. Passwords and
+provider credentials are transient inputs, never stored in session state.
 
 ## Repository layout
 
@@ -57,7 +70,10 @@ Keep platform-specific changes in the relevant host folder and application featu
 ## Team workflow
 
 1. Start from the team's shared base branch and create a short-lived branch for one feature or fix (for example, `feat/courier-delivery-list`). Do not commit directly to the base branch.
-2. Before coding a backend integration, confirm the current endpoint, request/response schema, authentication, and error behavior with the backend owner. The docs describe REST/GraphQL APIs, SSE customer tracking, and SignalR/WebSocket courier telemetry; some endpoint details differ between documents.
+2. Confirm current endpoint, request/response and authorization contracts before
+   integrating other features. Identity follows the existing REST contracts;
+   canonical tracking uses SSE. Earlier SignalR prose remains a documentation
+   mismatch and does not authorize adding competing realtime infrastructure.
 3. Keep each change focused. Put widgets and screens in their feature, API access behind a repository/data layer, and reusable app-wide code in `core/` or `shared/` as described in [lib/README.md](lib/README.md).
 4. Include or update tests for changed behavior. Run formatting, analysis, and relevant tests before opening a pull request:
 
