@@ -395,6 +395,41 @@ void main() {
     });
   });
   group('Courier concurrency and privacy', () {
+    for (final code in [201, 202]) {
+      test(
+        'unconfirmed HTTP $code retains the original request for explicit retry',
+        () async {
+          final port = FakeTransport(), s = sessions();
+          var now = DateTime(2026);
+          final c = CourierController(
+            sessions: s,
+            api: CourierApi(port),
+            now: () => now,
+          );
+          addTearDown(c.dispose);
+          addTearDown(s.dispose);
+          await c.loadDetail(parcelId);
+          port.write = () async => reply(raw('PickedUp', 3), code);
+          await c.status('PickedUp', 'Collected');
+          expect(c.pending, isNotNull);
+          expect(c.receipt, isNull);
+          final original = c.pending;
+          await c.status('Failed', '', reason: 'Other');
+          expect(identical(c.pending, original), true);
+          port.write = () async => reply(raw('PickedUp', 3));
+          port.status = 'PickedUp';
+          port.version = 3;
+          now = now.add(const Duration(seconds: 1));
+          await c.retry();
+          final writes = port.calls.where((r) => r.method == 'PUT').toList();
+          expect(writes.length, 2);
+          expect(writes[0].body, writes[1].body);
+          expect(writes[0].headers, writes[1].headers);
+          expect(c.receipt!.status, 'PickedUp');
+          expect(c.pending, isNull);
+        },
+      );
+    }
     test(
       'uncertain write retries identical payload/key and prevents new action',
       () async {

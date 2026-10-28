@@ -66,6 +66,8 @@ loopback policy are preserved; no broader cleartext or storage permission is add
 Each mutation freezes payload, version, immutable bytes and a secure random key.
 An uncertain result retains that attempt, disables new actions and allows an
 explicit identical retry after Retry-After. No automatic write retry occurs.
+Unexpected 201/202 or other non-200 success responses also remain uncertain;
+they cannot confirm delivery or discard the original key before a retry.
 Stale/invalid transitions clear the old detail and reload before a new action.
 401/403 purge private state and ignore outstanding reads; 404 hides lost ownership.
 Session changes clear lists/details, pending proof, receipt, forms and late
