@@ -112,7 +112,15 @@ class _BookingScreenState extends State<BookingScreen> {
     builder: (context, _) => PopScope(
       canPop: !controller.locked,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Book a delivery')),
+        appBar: AppBar(
+          title: const Text('Book a delivery'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pushNamed(context, '/courier'),
+              child: const Text('Courier'),
+            ),
+          ],
+        ),
         body: !controller.canBook
             ? const Center(
                 child: Padding(

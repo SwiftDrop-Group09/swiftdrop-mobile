@@ -5,7 +5,10 @@ pickup/delivery/recipient/package forms, server fee preview, explicit confirmati
 safe retry recovery and the committed server tracking result. The feature uses
 injected session, HTTP and zone-catalog interfaces. IAM remains a separate task;
 the normal app requires a Customer session and never selects a fictional user.
-No Courier implementation or authentication flow was changed.
+Courier manifest, details, stage/failure actions, temporary proof capture/upload
+and terminal history are implemented using those shared integration ports.
+See [Courier integration](docs/courier-integration.md) for contracts, concurrency,
+Identity handoff, verification and native-device dependencies.
 
 ## Requirements
 
