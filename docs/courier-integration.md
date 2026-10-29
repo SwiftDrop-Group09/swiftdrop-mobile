@@ -68,6 +68,12 @@ An uncertain result retains that attempt, disables new actions and allows an
 explicit identical retry after Retry-After. No automatic write retry occurs.
 Unexpected 201/202 or other non-200 success responses also remain uncertain;
 they cannot confirm delivery or discard the original key before a retry.
+Undocumented redirects are equally unconfirmed. The shared JSON/multipart
+transport requires HTTPS outside loopback, rejects credential-bearing bases,
+foreign URL references and raw/encoded path traversal, and never follows a
+redirect. Redirect responses become safe transport errors, preserving Booking
+and Courier's existing uncertain-outcome recovery. Legitimate API paths, bodies,
+headers, same-client authentication and loopback test traffic are retained.
 Stale/invalid transitions clear the old detail and reload before a new action.
 401/403 purge private state and ignore outstanding reads; 404 hides lost ownership.
 Session changes clear lists/details, pending proof, receipt, forms and late

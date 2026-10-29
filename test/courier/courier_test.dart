@@ -395,7 +395,7 @@ void main() {
     });
   });
   group('Courier concurrency and privacy', () {
-    for (final code in [201, 202]) {
+    for (final code in [201, 202, 301, 302, 303, 307, 308]) {
       test(
         'unconfirmed HTTP $code retains the original request for explicit retry',
         () async {

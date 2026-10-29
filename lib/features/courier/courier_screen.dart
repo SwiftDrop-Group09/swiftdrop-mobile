@@ -131,8 +131,8 @@ class _CourierScreenState extends State<CourierScreen> {
             final day = await showDatePicker(
               context: context,
               initialDate: DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
+              firstDate: DateTime(1),
+              lastDate: DateTime(9999, 12, 31),
             );
             if (day != null && mounted) {
               c.date =

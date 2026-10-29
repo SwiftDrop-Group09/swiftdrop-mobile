@@ -27,9 +27,9 @@ final class CourierApi {
   const CourierApi(this.transport);
   final RequestTransport transport;
   Object? _decode(ApiReply r) {
-    // A queued/undocumented success is not the contracted committed receipt.
+    // A queued/redirected response is not the contracted committed receipt.
     // Its write outcome remains uncertain, so retain the original key and bytes.
-    if (r.status >= 200 && r.status < 300 && r.status != 200) {
+    if (r.status >= 200 && r.status < 400 && r.status != 200) {
       throw const CourierException('invalid_response');
     }
     if (r.status != 200) {
