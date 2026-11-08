@@ -112,3 +112,14 @@ iOS/Xcode/device checks remain deployment integration dependencies. Web/HTTP
 and widget tests cannot establish those native-device claims. Private bucket
 KMS/IAM/TLS and outbox delivery acceptance remain backend integration work.
 Proceed to Phase 8 only on explicit instruction.
+
+## PR integration review - 9 November 2026
+
+Target/default branch: `dev`. The current PR passed Dart formatting (29 files,
+zero changes), Flutter analysis with no issues, 118 tests, and a release web build
+with `--no-web-resources-cdn` on Flutter 3.47.8 / Dart 3.13.7. The two client HTTP
+adapters also passed against the backend-owned PostgreSQL courier fixture: five
+parcels finished as two Delivered and three Failed, with two proofs, 27 history
+rows, 27 outbox rows and 10 replay rows. Fixture cleanup succeeded. These are
+fixed-principal/private in-memory storage checks, not live IAM or bucket evidence.
+Native-device capture and platform signing remain the integration checks above.

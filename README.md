@@ -139,8 +139,8 @@ requires an installed Android SDK/device; desktop builds require platform tools.
 
 ## Team workflow
 
-1. Start from the team's shared base branch and create a short-lived branch for one feature or fix (for example, `feat/courier-delivery-list`). Do not commit directly to the base branch.
-2. Before coding a backend integration, confirm the current endpoint, request/response schema, authentication, and error behavior with the backend owner. The docs describe REST/GraphQL APIs, SSE customer tracking, and SignalR/WebSocket courier telemetry; some endpoint details differ between documents.
+1. Start from the default `dev` branch and create a short-lived branch for one feature or fix (for example, `feat/courier-delivery-list`). Do not commit directly to the base branch.
+2. Before coding a backend integration, confirm the current endpoint, request/response schema, authentication, and error behavior with the backend owner. Use the canonical versioned REST and authorization contracts; authenticated Customer SSE is proposed and GPS/SignalR/WebSocket telemetry is deferred.
 3. Keep each change focused. Put widgets and screens in their feature, API access behind a repository/data layer, and reusable app-wide code in `core/` or `shared/` as described in [lib/README.md](lib/README.md).
 4. Include or update tests for changed behavior. Run formatting, analysis, and relevant tests before opening a pull request:
 
