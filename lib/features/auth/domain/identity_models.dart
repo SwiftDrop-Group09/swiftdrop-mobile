@@ -1,12 +1,8 @@
 import '../../../core/errors/identity_exception.dart';
+import '../../../core/session/identity_role.dart';
 
-const identityRoles = {
-  'Customer',
-  'Courier',
-  'Merchant',
-  'Dispatcher',
-  'Admin',
-};
+export '../../../core/session/identity_role.dart';
+
 final _uuid = RegExp(
   r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
 );
@@ -23,7 +19,7 @@ final class IdentityProfile {
     required this.address,
     required List<String> roles,
     required this.isActive,
-  }) : roles = List.unmodifiable(roles);
+  }) : role = IdentityRole.single(roles);
 
   factory IdentityProfile.fromJson(Map<String, dynamic> json) {
     final id = json['id'];
@@ -45,7 +41,7 @@ final class IdentityProfile {
         !json.containsKey('phoneNumber') ||
         !json.containsKey('address') ||
         roles is! List ||
-        roles.length > 5 ||
+        roles.length != 1 ||
         roles.any((role) => role is! String || !identityRoles.contains(role)) ||
         roles.toSet().length != roles.length ||
         active is! bool) {
@@ -67,7 +63,8 @@ final class IdentityProfile {
   final String fullName;
   final String? phoneNumber;
   final String? address;
-  final List<String> roles;
+  final IdentityRole role;
+  List<String> get roles => List.unmodifiable([role.wireValue]);
   final bool isActive;
 }
 

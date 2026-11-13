@@ -251,6 +251,8 @@ void main() {
     ['Unknown'],
     ['Admin', 1],
     ['Admin', 'Admin'],
+    ['Admin', 'Customer'],
+    <String>[],
   ]) {
     test('rejects malformed or duplicate role data $badRoles', () {
       expect(
@@ -259,9 +261,10 @@ void main() {
       );
     });
   }
-  test('zero roles are valid profile data but grant no authority', () {
-    final value = IdentityProfile.fromJson({...profile, 'roles': <String>[]});
-    expect(value.roles, isEmpty);
+  test('profile exposes one typed enum role and an immutable wire adapter', () {
+    final value = IdentityProfile.fromJson(profile);
+    expect(value.role, IdentityRole.customer);
+    expect(value.roles, ['Customer']);
     expect(() => value.roles.add('Admin'), throwsUnsupportedError);
   });
   test('rejects malformed response JSON without reflecting it', () async {
