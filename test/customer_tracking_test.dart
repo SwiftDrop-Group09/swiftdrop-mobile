@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +23,7 @@ final class _FakeTransport implements RequestTransport {
     for (final entry in responses.entries) {
       if (path.startsWith(entry.key)) return entry.value;
     }
-    return ApiReply(status: 404, body: '{"code":"not_found"}', headers: const {});
+    return const ApiReply(404, '{"code":"not_found"}');
   }
 }
 
@@ -39,8 +38,8 @@ void main() {
   test('CustomerHistoryController loads paginated parcels and applies filters', () async {
     final transport = _FakeTransport();
     transport.responses['/api/v1/parcels'] = ApiReply(
-      status: 200,
-      body: jsonEncode({
+      200,
+      jsonEncode({
         'items': [
           {
             'id': '11111111-1111-1111-1111-111111111111',
@@ -65,14 +64,12 @@ void main() {
         'page': 1,
         'pageSize': 20,
       }),
-      headers: const {},
     );
 
     final sessions = ValueNotifier(
-      const AppSession.signedIn(
-        userId: 'cust-1',
+      const AppSession(
+        principalId: 'cust-1',
         roles: ['Customer'],
-        accessToken: 'tok',
       ),
     );
     final controller = CustomerHistoryController(

@@ -8,8 +8,9 @@ import '../domain/booking_models.dart';
 import 'booking_controller.dart';
 
 class BookingScreen extends StatefulWidget {
-  const BookingScreen({super.key, required this.controller});
+  const BookingScreen({super.key, required this.controller, this.showProfile = false});
   final BookingController controller;
+  final bool showProfile;
   @override
   State<BookingScreen> createState() => _BookingScreenState();
 }
@@ -115,6 +116,12 @@ class _BookingScreenState extends State<BookingScreen> {
         appBar: AppBar(
           title: const Text('Book a delivery'),
           actions: [
+            if (widget.showProfile)
+              IconButton(
+                tooltip: 'My profile',
+                onPressed: () => Navigator.pushNamed(context, '/profile'),
+                icon: const Icon(Icons.account_circle_outlined),
+              ),
             TextButton(
               onPressed: () => Navigator.pushNamed(context, '/courier'),
               child: const Text('Courier'),

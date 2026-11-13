@@ -5,6 +5,7 @@ final class AppSession {
   final String? principalId;
   final List<String> roles;
   bool get _signedIn => principalId != null && principalId!.isNotEmpty;
+  bool get signedIn => _signedIn;
   bool get canBook => _signedIn && roles.contains('Customer');
   bool get canCourier => _signedIn && roles.contains('Courier');
   String get scope =>

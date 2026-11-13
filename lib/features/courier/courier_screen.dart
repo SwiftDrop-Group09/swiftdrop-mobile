@@ -9,8 +9,9 @@ import 'courier_models.dart';
 import 'proof_capture.dart';
 
 class CourierScreen extends StatefulWidget {
-  const CourierScreen({super.key, required this.controller, this.capture});
+  const CourierScreen({super.key, required this.controller, this.capture, this.showProfile = false});
   final CourierController controller;
+  final bool showProfile;
   final ProofCapture? capture;
   @override
   State<CourierScreen> createState() => _CourierScreenState();
@@ -56,6 +57,12 @@ class _CourierScreenState extends State<CourierScreen> {
       appBar: AppBar(
         title: const Text('Courier deliveries'),
         actions: [
+          if (widget.showProfile)
+            IconButton(
+              tooltip: 'My profile',
+              onPressed: () => Navigator.pushNamed(context, '/profile'),
+              icon: const Icon(Icons.account_circle_outlined),
+            ),
           TextButton(
             onPressed: () => Navigator.pushNamed(context, '/book'),
             child: const Text('Booking'),
