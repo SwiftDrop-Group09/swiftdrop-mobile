@@ -7,10 +7,7 @@ import '../data/tracking_api.dart';
 import '../domain/tracking_models.dart';
 
 final class CustomerHistoryController extends ChangeNotifier {
-  CustomerHistoryController({
-    required this.sessions,
-    required this.api,
-  });
+  CustomerHistoryController({required this.sessions, required this.api});
 
   final ValueListenable<AppSession> sessions;
   final TrackingApi api;
@@ -73,10 +70,7 @@ final class CustomerHistoryController extends ChangeNotifier {
 }
 
 final class CustomerParcelDetailController extends ChangeNotifier {
-  CustomerParcelDetailController({
-    required this.api,
-    required this.parcelId,
-  });
+  CustomerParcelDetailController({required this.api, required this.parcelId});
 
   final TrackingApi api;
   final String parcelId;
@@ -138,4 +132,3 @@ final class CustomerParcelDetailController extends ChangeNotifier {
     super.dispose();
   }
 }
-

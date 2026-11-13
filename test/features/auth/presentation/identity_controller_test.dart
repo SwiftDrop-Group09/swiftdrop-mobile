@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swiftdrop_mobile/core/errors/identity_exception.dart';
@@ -521,6 +522,35 @@ void main() {
       },
     );
   }
+
+  test('proof upload uses the active token and never retries an unauthorized mutation', () async {
+    await controller.login('fictional@example.test', 'Fictional password 42!');
+    final photo = UploadPart(
+      'photo',
+      'image/png',
+      Uint8List.fromList([1, 2, 3]),
+    );
+    transport.handler = (call) async => const ApiReply(401, '{}');
+    final before = transport.calls.length;
+    await expectLater(
+      IdentityAuthenticatedTransport(controller).sendMultipart(
+        '/api/v1/deliveries/11111111-1111-1111-1111-111111111111/pod',
+        {'expectedVersion': '5'},
+        [photo],
+        headers: {'Idempotency-Key': 'proof-attempt'},
+      ),
+      throwsA(isA<IdentityException>()),
+    );
+    expect(transport.calls.length, before + 1);
+    expect(
+      transport.calls.last.headers['Authorization'],
+      'Bearer test-access-$principal',
+    );
+    expect(transport.calls.last.headers['Idempotency-Key'], 'proof-attempt');
+    expect(transport.uploadedFiles, [photo]);
+    expect(controller.user, isNull);
+    expect(store.value, isNull);
+  });
 }
 
 class Call {
@@ -532,8 +562,9 @@ class Call {
   Map<String, dynamic> get json => jsonDecode(body!) as Map<String, dynamic>;
 }
 
-class TestTransport implements RequestTransport {
+class TestTransport implements RequestTransport, MultipartRequestTransport {
   final calls = <Call>[];
+  List<UploadPart>? uploadedFiles;
   Future<ApiReply> Function(Call) handler = (_) async => pair();
   @override
   Future<ApiReply> send(
@@ -545,6 +576,18 @@ class TestTransport implements RequestTransport {
     final call = Call(method, path, body, headers);
     calls.add(call);
     return handler(call);
+  }
+
+  @override
+  Future<ApiReply> sendMultipart(
+    String path,
+    Map<String, String> fields,
+    List<UploadPart> files, {
+    Map<String, String> headers = const {},
+    void Function(int sent, int total)? onProgress,
+  }) {
+    uploadedFiles = files;
+    return send('POST', path, body: jsonEncode(fields), headers: headers);
   }
 }
 

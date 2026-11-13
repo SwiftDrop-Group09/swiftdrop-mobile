@@ -372,4 +372,3 @@ final class ProofOfDeliveryModel {
 
 Map<String, Object?> decodeJsonObject(String raw) =>
     (jsonDecode(raw) as Map).cast<String, Object?>();
-

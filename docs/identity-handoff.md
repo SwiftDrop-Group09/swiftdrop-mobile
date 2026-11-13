@@ -9,11 +9,12 @@ uploads use the same session owner; caller-supplied identity headers are rejecte
 Customer zones come from the authenticated Delivery catalog. Session changes
 recreate the workspace to discard private feature state.
 
-The integration commit remains pending validation. Run `dart format lib test integration`,
-`flutter analyze --no-pub` and `flutter test --no-pub` after resolving dependencies.
-Windows desktop plugin generation requires symlink support; Android/iOS device
-acceptance remains separate. The dated checkpoint below describes the original
-identity branch, before this reconciliation.
+Validation passed: Dart formatting, analysis with fatal infos, and all 226 Flutter
+tests. Integration tests cover authenticated zone loading, navigation to profile,
+workspace removal on logout, and a proof upload rejected with 401 without retrying
+the mutation. Windows desktop plugin generation requires symlink support;
+Android/iOS device acceptance remains separate. The dated checkpoint below
+describes the original identity branch, before this reconciliation.
 
 ## Current status: 27 October 2026
 

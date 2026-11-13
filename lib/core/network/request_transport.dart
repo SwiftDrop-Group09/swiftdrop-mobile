@@ -71,13 +71,21 @@ final class HttpRequestTransport
   final Uri baseUri;
   final http.Client _client;
   static const _allowedHeaders = {
-    'authorization', 'content-type', 'accept', 'idempotency-key',
-    'x-correlation-id', 'if-match',
+    'authorization',
+    'content-type',
+    'accept',
+    'idempotency-key',
+    'x-correlation-id',
+    'if-match',
   };
 
   void _validateHeaders(Map<String, String> headers) {
-    if (headers.keys.any((key) => !_allowedHeaders.contains(key.toLowerCase())) ||
-        headers.values.any((value) => value.contains('\r') || value.contains('\n'))) {
+    if (headers.keys.any(
+          (key) => !_allowedHeaders.contains(key.toLowerCase()),
+        ) ||
+        headers.values.any(
+          (value) => value.contains('\r') || value.contains('\n'),
+        )) {
       throw const IdentityException('invalid_request');
     }
   }
@@ -149,7 +157,11 @@ final class HttpRequestTransport
       }
       bytes.addAll(chunk);
     }
-    return ApiReply(response.statusCode, utf8.decode(bytes), Map.unmodifiable(response.headers));
+    return ApiReply(
+      response.statusCode,
+      utf8.decode(bytes),
+      Map.unmodifiable(response.headers),
+    );
   }
 
   @override
@@ -166,18 +178,22 @@ final class HttpRequestTransport
       throw const IdentityException('invalid_request');
     }
     final abort = Completer<void>();
-    final request = http.AbortableRequest(method, uri, abortTrigger: abort.future)
-      ..headers.addAll(headers)
-      ..followRedirects = false;
+    final request =
+        http.AbortableRequest(method, uri, abortTrigger: abort.future)
+          ..headers.addAll(headers)
+          ..followRedirects = false;
     if (body != null) request.body = body;
     try {
       return await (() async {
         final streamed = await _client.send(request);
         return _readResponse(streamed);
-      })().timeout(const Duration(seconds: 20), onTimeout: () {
-        if (!abort.isCompleted) abort.complete();
-        throw const IdentityException('network_error');
-      });
+      })().timeout(
+        const Duration(seconds: 20),
+        onTimeout: () {
+          if (!abort.isCompleted) abort.complete();
+          throw const IdentityException('network_error');
+        },
+      );
     } on IdentityException {
       rethrow;
     } on Exception {

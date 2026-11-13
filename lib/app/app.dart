@@ -80,7 +80,8 @@ class _SwiftDropAppState extends State<SwiftDropApp> {
     builder: (context, _) {
       final courierMode = widget.mode == IdentityAppMode.courier;
       final session = widget.controller.customerSession;
-      if (widget.workspaceEnabled && !widget.controller.restoring &&
+      if (widget.workspaceEnabled &&
+          !widget.controller.restoring &&
           (courierMode ? session.canCourier : session.canBook)) {
         return MyApp(
           key: ValueKey(session.scope),

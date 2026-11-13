@@ -219,4 +219,3 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen> {
     );
   }
 }
-

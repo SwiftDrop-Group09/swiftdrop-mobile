@@ -13,6 +13,43 @@ import 'package:swiftdrop_mobile/features/auth/domain/google_identity_provider.d
 import 'package:swiftdrop_mobile/features/auth/presentation/identity_controller.dart';
 
 void main() {
+  testWidgets(
+    'restored Customer opens booking and logout removes its workspace',
+    (tester) async {
+      final fixture = _Fixture();
+      addTearDown(fixture.controller.dispose);
+      fixture.tokens.value = _refresh;
+      fixture.transport.interceptor = (call) =>
+          call.path == '/api/v1/quotes/zones'
+          ? Future.value(
+              const ApiReply(
+                200,
+                '[{"id":"aaaaaaaa-1111-2222-3333-123456789abc","name":"Fixture zone"}]',
+              ),
+            )
+          : null;
+      await tester.pumpWidget(fixture.app(workspaceEnabled: true));
+      await tester.pumpAndSettle();
+      expect(find.text('Book a delivery'), findsOneWidget);
+      final zoneCall = fixture.transport.calls.singleWhere(
+        (call) => call.path == '/api/v1/quotes/zones',
+      );
+      expect(
+        zoneCall.headers['Authorization'],
+        'Bearer fictional-application-access',
+      );
+      await tester.tap(find.byTooltip('My profile'));
+      await tester.pumpAndSettle();
+      expect(find.text('My profile'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('sign-out')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('sign-in-email')), findsOneWidget);
+      expect(find.text('Book a delivery'), findsNothing);
+      expect(fixture.tokens.value, isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   testWidgets('Pending profile mutation disables duplicate actions', (
     tester,
   ) async {
@@ -448,9 +485,10 @@ class _Fixture {
   Widget app({
     IdentityAppMode mode = IdentityAppMode.customer,
     bool googleEnabled = true,
+    bool workspaceEnabled = false,
   }) => SwiftDropApp(
     controller: controller,
-    workspaceEnabled: false,
+    workspaceEnabled: workspaceEnabled,
     mode: mode,
     googleEnabled: googleEnabled,
   );

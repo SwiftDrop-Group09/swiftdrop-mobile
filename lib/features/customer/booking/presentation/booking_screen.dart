@@ -8,7 +8,11 @@ import '../domain/booking_models.dart';
 import 'booking_controller.dart';
 
 class BookingScreen extends StatefulWidget {
-  const BookingScreen({super.key, required this.controller, this.showProfile = false});
+  const BookingScreen({
+    super.key,
+    required this.controller,
+    this.showProfile = false,
+  });
   final BookingController controller;
   final bool showProfile;
   @override

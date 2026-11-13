@@ -392,9 +392,16 @@ class IdentityController extends ChangeNotifier {
     Map<String, String> headers = const {},
     void Function(int sent, int total)? onProgress,
   }) async {
-    if (headers.keys.any((key) => const {
-      'authorization', 'cookie', 'origin', 'x-api-key',
-    }.contains(key.toLowerCase()) || key.toLowerCase().startsWith('x-user-'))) {
+    if (headers.keys.any(
+      (key) =>
+          const {
+            'authorization',
+            'cookie',
+            'origin',
+            'x-api-key',
+          }.contains(key.toLowerCase()) ||
+          key.toLowerCase().startsWith('x-user-'),
+    )) {
       throw const IdentityException('invalid_input');
     }
     final transport = _api.transport;
@@ -404,11 +411,14 @@ class IdentityController extends ChangeNotifier {
     final generation = _generation;
     final token = await accessToken();
     _check(generation);
-    final response = await (transport as MultipartRequestTransport).sendMultipart(
-      path, fields, files,
-      headers: {...headers, 'Authorization': 'Bearer $token'},
-      onProgress: onProgress,
-    );
+    final response = await (transport as MultipartRequestTransport)
+        .sendMultipart(
+          path,
+          fields,
+          files,
+          headers: {...headers, 'Authorization': 'Bearer $token'},
+          onProgress: onProgress,
+        );
     _check(generation);
     if (response.status == 401) {
       _generation++;
@@ -451,6 +461,10 @@ final class IdentityAuthenticatedTransport
     Map<String, String> headers = const {},
     void Function(int sent, int total)? onProgress,
   }) => controller.authorizedMultipart(
-    path, fields, files, headers: headers, onProgress: onProgress,
+    path,
+    fields,
+    files,
+    headers: headers,
+    onProgress: onProgress,
   );
 }

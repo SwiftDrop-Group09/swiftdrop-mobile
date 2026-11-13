@@ -91,11 +91,20 @@ class _MyAppState extends State<MyApp> {
       useMaterial3: true,
     ),
     home: widget.courierMode
-        ? CourierScreen(controller: _courier, showProfile: widget.profileBuilder != null)
-        : BookingScreen(controller: _controller, showProfile: widget.profileBuilder != null),
+        ? CourierScreen(
+            controller: _courier,
+            showProfile: widget.profileBuilder != null,
+          )
+        : BookingScreen(
+            controller: _controller,
+            showProfile: widget.profileBuilder != null,
+          ),
     routes: {
       if (widget.profileBuilder != null) '/profile': widget.profileBuilder!,
-      '/book': (_) => BookingScreen(controller: _controller, showProfile: widget.profileBuilder != null),
+      '/book': (_) => BookingScreen(
+        controller: _controller,
+        showProfile: widget.profileBuilder != null,
+      ),
       '/history': (_) => CustomerHistoryScreen(controller: _history),
       '/tracking': (context) {
         final parcelId =
@@ -112,7 +121,10 @@ class _MyAppState extends State<MyApp> {
             (ModalRoute.of(context)?.settings.arguments as String?) ?? '';
         return CustomerReceiptScreen(api: _trackingApi, parcelId: parcelId);
       },
-      '/courier': (_) => CourierScreen(controller: _courier, showProfile: widget.profileBuilder != null),
+      '/courier': (_) => CourierScreen(
+        controller: _courier,
+        showProfile: widget.profileBuilder != null,
+      ),
     },
   );
 }

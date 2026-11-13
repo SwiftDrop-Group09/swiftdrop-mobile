@@ -9,7 +9,12 @@ import 'courier_models.dart';
 import 'proof_capture.dart';
 
 class CourierScreen extends StatefulWidget {
-  const CourierScreen({super.key, required this.controller, this.capture, this.showProfile = false});
+  const CourierScreen({
+    super.key,
+    required this.controller,
+    this.capture,
+    this.showProfile = false,
+  });
   final CourierController controller;
   final bool showProfile;
   final ProofCapture? capture;
