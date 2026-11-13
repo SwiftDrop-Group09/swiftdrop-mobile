@@ -330,7 +330,7 @@ void main() {
   });
 
   testWidgets(
-    'Authorized Courier and zero-role users share safe own-profile flow',
+    'Changing Courier to Admin removes Courier access while preserving own profile',
     (tester) async {
       final fixture = await _signedIn(
         tester,
@@ -339,10 +339,10 @@ void main() {
       );
       expect(find.text('Courier role verified'), findsOneWidget);
       expect(find.byKey(const Key('profile-full-name')), findsOneWidget);
-      fixture.transport.profile['roles'] = <String>[];
+      fixture.transport.profile['roles'] = ['Admin'];
       await _tap(tester, find.byKey(const Key('reload-profile')));
       expect(find.text('Courier access unavailable'), findsOneWidget);
-      expect(find.text('No application roles assigned'), findsOneWidget);
+      expect(find.text('Role: Admin'), findsOneWidget);
       expect(find.text('My profile'), findsOneWidget);
     },
   );

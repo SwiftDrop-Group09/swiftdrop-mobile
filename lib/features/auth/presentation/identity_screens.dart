@@ -391,11 +391,7 @@ class _IdentityProfileScreenState extends State<IdentityProfileScreen> {
           const SizedBox(height: 16),
           SelectableText(user.email, key: const Key('profile-email')),
           const SizedBox(height: 8),
-          Text(
-            user.roles.isEmpty
-                ? 'No application roles assigned'
-                : 'Roles: ${user.roles.join(', ')}',
-          ),
+          Text('Role: ${user.role.wireValue}'),
           const SizedBox(height: 20),
           Form(
             key: _form,

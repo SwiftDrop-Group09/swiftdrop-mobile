@@ -188,3 +188,13 @@ cleartext exceptions to make physical-device testing pass.
 The backend phase report and frontend `docs/identity-integration.md` provide the
 implemented server/browser behavior. The original source specification remains
 Proposed; this record does not amend it or claim live device/provider completion.
+
+## Single-role model
+
+IdentityProfile exposes exactly one typed IdentityRole enum. The v1 `roles`
+array remains an immutable singleton wire adapter. Zero, multiple, unknown and
+non-string roles fail parsing; AppSession grants authority only for one known
+role. Registration defaults to Customer, while a Courier account is assigned
+Courier by an Admin. Combined Customer/Courier accounts are unsupported; use
+separate accounts for separate workspaces. Historical role notes above that
+permit combinations or roleless profiles are superseded by this rule.
