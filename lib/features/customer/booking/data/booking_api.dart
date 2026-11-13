@@ -15,6 +15,27 @@ final class BookingApiFailure implements Exception {
   final Map<String, String> errors;
 }
 
+final class ApiZoneCatalog implements ZoneCatalog {
+  const ApiZoneCatalog(this.transport);
+  final RequestTransport transport;
+
+  @override
+  Future<List<BookingZone>> load() async {
+    final reply = await transport.send('GET', '/api/v1/quotes/zones');
+    if (reply.status != 200) {
+      throw BookingApiFailure(reply.status, 'zones_unavailable');
+    }
+    final payload = decodeExactJson(reply.body);
+    if (payload is! List) throw const FormatException('Invalid zone catalog.');
+    return payload
+        .map((value) {
+          final zone = jsonObject(value);
+          return BookingZone(zone['id']! as String, zone['name']! as String);
+        })
+        .toList(growable: false);
+  }
+}
+
 final class BookingApi {
   const BookingApi(this.transport);
   final RequestTransport transport;

@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+
+import '../errors/identity_exception.dart';
 
 final class UploadPart {
   UploadPart(this.field, this.mimeType, Uint8List bytes)
@@ -67,6 +70,25 @@ final class HttpRequestTransport
 
   final Uri baseUri;
   final http.Client _client;
+  static const _allowedHeaders = {
+    'authorization',
+    'content-type',
+    'accept',
+    'idempotency-key',
+    'x-correlation-id',
+    'if-match',
+  };
+
+  void _validateHeaders(Map<String, String> headers) {
+    if (headers.keys.any(
+          (key) => !_allowedHeaders.contains(key.toLowerCase()),
+        ) ||
+        headers.values.any(
+          (value) => value.contains('\r') || value.contains('\n'),
+        )) {
+      throw const IdentityException('invalid_request');
+    }
+  }
 
   Uri _resolve(String path) {
     bool unsafeSegment(String segment) {
@@ -91,17 +113,20 @@ final class HttpRequestTransport
         baseUri.hasFragment ||
         (baseUri.scheme == 'http' &&
             !const ['localhost', '127.0.0.1', '::1'].contains(baseUri.host))) {
-      throw ArgumentError('Use a credential-free HTTP or HTTPS API base.');
+      throw const IdentityException('invalid_configuration');
     }
     // Check before Uri parsing normalizes literal/encoded dot segments away.
     if (path.split(RegExp(r'[?#]')).first.split('/').any(unsafeSegment)) {
-      throw ArgumentError('Use an API path on the configured origin.');
+      throw const IdentityException('invalid_request');
     }
     final reference = Uri.tryParse(path);
     if (reference == null ||
         reference.hasScheme ||
         reference.hasAuthority ||
         reference.hasFragment ||
+        (!reference.path.startsWith('/api/v1/') &&
+            !(const ['localhost', '127.0.0.1', '::1'].contains(baseUri.host) &&
+                reference.path.startsWith('/__test/'))) ||
         path.contains(r'\') ||
         reference.pathSegments.any(
           (part) =>
@@ -111,11 +136,11 @@ final class HttpRequestTransport
               part.contains(r'\') ||
               part.contains('%'),
         )) {
-      throw ArgumentError('Use an API path on the configured origin.');
+      throw const IdentityException('invalid_request');
     }
     final uri = baseUri.resolveUri(reference);
     if (uri.origin != baseUri.origin) {
-      throw ArgumentError('Use an API path on the configured origin.');
+      throw const IdentityException('invalid_request');
     }
     return uri;
   }
@@ -123,10 +148,20 @@ final class HttpRequestTransport
   Future<ApiReply> _readResponse(http.StreamedResponse response) async {
     if (response.statusCode >= 300 && response.statusCode < 400) {
       await response.stream.listen((_) {}).cancel();
-      throw http.ClientException('API redirects are not allowed.');
+      throw const IdentityException('network_error');
     }
-    final reply = await http.Response.fromStream(response);
-    return ApiReply(reply.statusCode, reply.body, reply.headers);
+    final bytes = <int>[];
+    await for (final chunk in response.stream) {
+      if (bytes.length + chunk.length > 1048576) {
+        throw const IdentityException('invalid_response');
+      }
+      bytes.addAll(chunk);
+    }
+    return ApiReply(
+      response.statusCode,
+      utf8.decode(bytes),
+      Map.unmodifiable(response.headers),
+    );
   }
 
   @override
@@ -137,14 +172,35 @@ final class HttpRequestTransport
     Map<String, String> headers = const {},
   }) async {
     final uri = _resolve(path);
-    final request = http.Request(method, uri)
-      ..headers.addAll(headers)
-      ..followRedirects = false;
+    _validateHeaders(headers);
+    if (!const {'GET', 'POST', 'PUT', 'DELETE'}.contains(method) ||
+        (body != null && utf8.encode(body).length > 16384)) {
+      throw const IdentityException('invalid_request');
+    }
+    final abort = Completer<void>();
+    final request =
+        http.AbortableRequest(method, uri, abortTrigger: abort.future)
+          ..headers.addAll(headers)
+          ..followRedirects = false;
     if (body != null) request.body = body;
-    final streamed = await _client
-        .send(request)
-        .timeout(const Duration(seconds: 20));
-    return _readResponse(streamed).timeout(const Duration(seconds: 20));
+    try {
+      return await (() async {
+        final streamed = await _client.send(request);
+        return _readResponse(streamed);
+      })().timeout(
+        const Duration(seconds: 20),
+        onTimeout: () {
+          if (!abort.isCompleted) abort.complete();
+          throw const IdentityException('network_error');
+        },
+      );
+    } on IdentityException {
+      rethrow;
+    } on Exception {
+      throw const IdentityException('network_error');
+    } finally {
+      if (!abort.isCompleted) abort.complete();
+    }
   }
 
   void close() => _client.close();
@@ -158,6 +214,7 @@ final class HttpRequestTransport
     void Function(int sent, int total)? onProgress,
   }) async {
     final uri = _resolve(path);
+    _validateHeaders(headers);
     final abort = Completer<void>();
     final request = _ProgressRequest('POST', uri, onProgress, abort.future)
       ..headers.addAll(headers)
@@ -185,6 +242,10 @@ final class HttpRequestTransport
           throw TimeoutException('Proof confirmation timed out.');
         },
       );
+    } on IdentityException {
+      rethrow;
+    } on Exception {
+      throw const IdentityException('network_error');
     } finally {
       if (!abort.isCompleted) abort.complete();
     }
@@ -200,5 +261,5 @@ final class UnavailableTransport implements RequestTransport {
     String path, {
     String? body,
     Map<String, String> headers = const {},
-  }) => Future.error(StateError('An authenticated session is required.'));
+  }) => Future.error(const IdentityException('invalid_credentials'));
 }

@@ -195,4 +195,3 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
     );
   }
 }
-

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:swiftdrop_mobile/core/network/request_transport.dart';
+import 'package:swiftdrop_mobile/core/errors/identity_exception.dart';
 
 void main() {
   for (final base in [
@@ -35,7 +36,7 @@ void main() {
                     [],
                   )
                 : transport.send('GET', '/api/v1/couriers/me/assignments'),
-            throwsArgumentError,
+            throwsA(isA<IdentityException>()),
           );
           expect(calls, 0);
         },
@@ -81,7 +82,7 @@ void main() {
                     'Authorization': 'Bearer fictional-test-credential',
                   },
                 );
-          await expectLater(result, throwsArgumentError);
+          await expectLater(result, throwsA(isA<IdentityException>()));
           expect(calls, 0);
         },
       );
@@ -150,7 +151,7 @@ void main() {
                 'Idempotency-Key': 'original-key',
               },
             ),
-            throwsA(isA<http.ClientException>()),
+            throwsA(isA<IdentityException>()),
           );
           expect(redirectedRequests, 0);
         } finally {

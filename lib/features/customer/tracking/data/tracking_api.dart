@@ -18,10 +18,7 @@ final class TrackingApi {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final params = <String, String>{
-      'page': '$page',
-      'pageSize': '$pageSize',
-    };
+    final params = <String, String>{'page': '$page', 'pageSize': '$pageSize'};
     if (status != null && status.isNotEmpty) params['status'] = status;
     if (search != null && search.trim().isNotEmpty) {
       params['search'] = search.trim();
@@ -74,4 +71,3 @@ final class TrackingApi {
     }
   }
 }
-

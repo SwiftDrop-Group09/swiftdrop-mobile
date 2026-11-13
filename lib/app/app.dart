@@ -1,84 +1,110 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 
-import '../core/network/request_transport.dart';
+import '../core/config/identity_config.dart';
+import '../core/errors/identity_exception.dart';
 import '../core/session/customer_session.dart';
 import '../features/customer/booking/data/booking_api.dart';
-import '../features/customer/booking/domain/booking_models.dart';
-import '../features/customer/booking/presentation/booking_controller.dart';
-import '../features/customer/booking/presentation/booking_screen.dart';
-import '../features/customer/tracking/data/tracking_api.dart';
-import '../features/customer/tracking/presentation/history_screen.dart';
-import '../features/customer/tracking/presentation/receipt_screen.dart';
-import '../features/customer/tracking/presentation/tracking_controller.dart';
-import '../features/customer/tracking/presentation/tracking_screen.dart';
-import '../features/courier/courier_api.dart';
-import '../features/courier/courier_controller.dart';
-import '../features/courier/courier_screen.dart';
+import '../features/auth/presentation/identity_controller.dart';
+import '../features/auth/presentation/identity_screens.dart';
+import 'delivery_app.dart';
 
-class MyApp extends StatefulWidget {
-  const MyApp({
+export 'delivery_app.dart' show MyApp;
+
+class SwiftDropApp extends StatefulWidget {
+  const SwiftDropApp({
     super.key,
-    this.controller,
-    this.courierController,
-    this.sessions,
-    this.transport,
-    this.zoneCatalog,
+    required this.controller,
+    required this.mode,
+    this.googleEnabled = true,
+    this.disposeController = false,
+    this.onDispose,
+    this.workspaceEnabled = true,
   });
-  final BookingController? controller;
-  final CourierController? courierController;
-  final ValueListenable<AppSession>? sessions;
-  final RequestTransport? transport;
-  final ZoneCatalog? zoneCatalog;
+
+  final IdentityController controller;
+  final IdentityAppMode mode;
+  final bool googleEnabled;
+  final bool disposeController;
+  final VoidCallback? onDispose;
+  final bool workspaceEnabled;
+
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<SwiftDropApp> createState() => _SwiftDropAppState();
 }
 
-class _MyAppState extends State<MyApp> {
-  late final ValueNotifier<CustomerSession>? _ownedSessions;
-  late final BookingController _controller;
-  late final CourierController _courier;
-  late final TrackingApi _trackingApi;
-  late final CustomerHistoryController _history;
+class _SwiftDropAppState extends State<SwiftDropApp> {
+  String? _restorationMessage;
+  late final ValueNotifier<CustomerSession> _sessions;
+  late final IdentityAuthenticatedTransport _transport;
+
   @override
   void initState() {
     super.initState();
-    _ownedSessions = widget.sessions == null
-        ? ValueNotifier(const CustomerSession.signedOut())
-        : null;
-    final transport = widget.transport ?? const UnavailableTransport();
-    _trackingApi = TrackingApi(transport);
-    _controller =
-        widget.controller ??
-        BookingController(
-          sessions: widget.sessions ?? _ownedSessions!,
-          api: BookingApi(transport),
-          zoneCatalog: widget.zoneCatalog ?? const UnavailableZoneCatalog(),
-        );
-    _courier =
-        widget.courierController ??
-        CourierController(
-          sessions: widget.sessions ?? _ownedSessions!,
-          api: CourierApi(transport),
-        );
-    _history = CustomerHistoryController(
-      sessions: widget.sessions ?? _ownedSessions!,
-      api: _trackingApi,
-    );
+    _sessions = ValueNotifier(widget.controller.customerSession);
+    _transport = IdentityAuthenticatedTransport(widget.controller);
+    widget.controller.addListener(_syncSession);
+    _restore();
+  }
+
+  void _syncSession() {
+    final session = widget.controller.customerSession;
+    if (_sessions.value.scope != session.scope) _sessions.value = session;
+  }
+
+  Future<void> _restore() async {
+    try {
+      await widget.controller.restore();
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _restorationMessage = error is IdentityException
+              ? error.message
+              : 'Your session could not be restored. Please sign in again.';
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
-    if (widget.controller == null) _controller.dispose();
-    if (widget.courierController == null) _courier.dispose();
-    _history.dispose();
-    _ownedSessions?.dispose();
+    widget.controller.removeListener(_syncSession);
+    _sessions.dispose();
+    if (widget.disposeController) widget.controller.dispose();
+    widget.onDispose?.call();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'SwiftDrop',
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: widget.controller,
+    builder: (context, _) {
+      final courierMode = widget.mode == IdentityAppMode.courier;
+      final session = widget.controller.customerSession;
+      if (widget.workspaceEnabled &&
+          !widget.controller.restoring &&
+          (courierMode ? session.canCourier : session.canBook)) {
+        return MyApp(
+          key: ValueKey(session.scope),
+          sessions: _sessions,
+          transport: _transport,
+          zoneCatalog: ApiZoneCatalog(_transport),
+          courierMode: courierMode,
+          profileBuilder: (_) => IdentityProfileScreen(
+            controller: widget.controller,
+            mode: widget.mode,
+            googleEnabled: widget.googleEnabled,
+          ),
+        );
+      }
+      return _identityApp();
+    },
+  );
+
+  Widget _identityApp() => MaterialApp(
+    title: widget.mode == IdentityAppMode.courier
+        ? 'SwiftDrop Courier'
+        : 'SwiftDrop Customer',
+    debugShowCheckedModeBanner: false,
     theme: ThemeData(
       colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff176b56)),
       inputDecorationTheme: const InputDecorationTheme(
@@ -86,26 +112,37 @@ class _MyAppState extends State<MyApp> {
       ),
       useMaterial3: true,
     ),
-    home: BookingScreen(controller: _controller),
-    routes: {
-      '/book': (_) => BookingScreen(controller: _controller),
-      '/history': (_) => CustomerHistoryScreen(controller: _history),
-      '/tracking': (context) {
-        final parcelId =
-            (ModalRoute.of(context)?.settings.arguments as String?) ?? '';
-        return CustomerTrackingScreen(
-          controller: CustomerParcelDetailController(
-            api: _trackingApi,
-            parcelId: parcelId,
-          ),
+    home: ListenableBuilder(
+      listenable: widget.controller,
+      builder: (context, _) {
+        if (widget.controller.restoring) {
+          return const Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Restoring your session…'),
+                ],
+              ),
+            ),
+          );
+        }
+        if (widget.controller.user == null) {
+          return IdentitySignInScreen(
+            controller: widget.controller,
+            mode: widget.mode,
+            googleEnabled: widget.googleEnabled,
+            initialNotice: _restorationMessage ?? widget.controller.message,
+          );
+        }
+        return IdentityProfileScreen(
+          controller: widget.controller,
+          mode: widget.mode,
+          googleEnabled: widget.googleEnabled,
         );
       },
-      '/receipt': (context) {
-        final parcelId =
-            (ModalRoute.of(context)?.settings.arguments as String?) ?? '';
-        return CustomerReceiptScreen(api: _trackingApi, parcelId: parcelId);
-      },
-      '/courier': (_) => CourierScreen(controller: _courier),
-    },
+    ),
   );
 }

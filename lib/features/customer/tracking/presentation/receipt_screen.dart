@@ -63,82 +63,82 @@ class _CustomerReceiptScreenState extends State<CustomerReceiptScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null || _receipt == null
-              ? Center(
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  _error ?? 'Receipt unavailable.',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      _error ?? 'Receipt unavailable.',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'SwiftDrop Receipt',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(_receipt!.receiptNumber),
+                        Text(
+                          'Tracking: ${_receipt!.trackingNumber}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const Divider(height: 24),
+                        Text(
+                          'Pickup: ${_receipt!.pickupAddress.street}, ${_receipt!.pickupAddress.city}',
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Delivery: ${_receipt!.deliveryAddress.street}, ${_receipt!.deliveryAddress.city}',
+                        ),
+                        const SizedBox(height: 4),
+                        Text('Recipient: ${_receipt!.recipient.name}'),
+                        const Divider(height: 24),
+                        _FeeRow(
+                          'Base Delivery Fee',
+                          '${_receipt!.currency} ${_receipt!.baseFee.toStringAsFixed(2)}',
+                        ),
+                        const SizedBox(height: 6),
+                        _FeeRow(
+                          'Weight Surcharge',
+                          '${_receipt!.currency} ${_receipt!.weightFee.toStringAsFixed(2)}',
+                        ),
+                        const Divider(height: 20),
+                        _FeeRow(
+                          'Total Charged',
+                          '${_receipt!.currency} ${_receipt!.total.toStringAsFixed(2)}',
+                          bold: true,
+                        ),
+                      ],
                     ),
                   ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'SwiftDrop Receipt',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(_receipt!.receiptNumber),
-                            Text(
-                              'Tracking: ${_receipt!.trackingNumber}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            const Divider(height: 24),
-                            Text(
-                              'Pickup: ${_receipt!.pickupAddress.street}, ${_receipt!.pickupAddress.city}',
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Delivery: ${_receipt!.deliveryAddress.street}, ${_receipt!.deliveryAddress.city}',
-                            ),
-                            const SizedBox(height: 4),
-                            Text('Recipient: ${_receipt!.recipient.name}'),
-                            const Divider(height: 24),
-                            _FeeRow(
-                              'Base Delivery Fee',
-                              '${_receipt!.currency} ${_receipt!.baseFee.toStringAsFixed(2)}',
-                            ),
-                            const SizedBox(height: 6),
-                            _FeeRow(
-                              'Weight Surcharge',
-                              '${_receipt!.currency} ${_receipt!.weightFee.toStringAsFixed(2)}',
-                            ),
-                            const Divider(height: 20),
-                            _FeeRow(
-                              'Total Charged',
-                              '${_receipt!.currency} ${_receipt!.total.toStringAsFixed(2)}',
-                              bold: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () async {
-                        await Clipboard.setData(
-                          ClipboardData(text: _receipt!.toShareableText()),
-                        );
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Receipt copied to clipboard.'),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.copy_all_outlined),
-                      label: const Text('Copy / Share Receipt'),
-                    ),
-                  ],
                 ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () async {
+                    await Clipboard.setData(
+                      ClipboardData(text: _receipt!.toShareableText()),
+                    );
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Receipt copied to clipboard.'),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.copy_all_outlined),
+                  label: const Text('Copy / Share Receipt'),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -163,4 +163,3 @@ class _FeeRow extends StatelessWidget {
     );
   }
 }
-

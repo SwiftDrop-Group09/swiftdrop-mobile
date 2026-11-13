@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +23,7 @@ final class _FakeTransport implements RequestTransport {
     for (final entry in responses.entries) {
       if (path.startsWith(entry.key)) return entry.value;
     }
-    return ApiReply(status: 404, body: '{"code":"not_found"}', headers: const {});
+    return const ApiReply(404, '{"code":"not_found"}');
   }
 }
 
@@ -36,56 +35,53 @@ void main() {
     expect(parcelStatusLabel('Delivered'), 'Delivered');
   });
 
-  test('CustomerHistoryController loads paginated parcels and applies filters', () async {
-    final transport = _FakeTransport();
-    transport.responses['/api/v1/parcels'] = ApiReply(
-      status: 200,
-      body: jsonEncode({
-        'items': [
-          {
-            'id': '11111111-1111-1111-1111-111111111111',
-            'trackingNumber': 'TRK-001',
-            'status': 'Delivered',
-            'version': 4,
-            'priceSnapshot': {
-              'total': 540.0,
-              'currency': 'LKR',
-              'pricingVersion': 'v1',
+  test(
+    'CustomerHistoryController loads paginated parcels and applies filters',
+    () async {
+      final transport = _FakeTransport();
+      transport.responses['/api/v1/parcels'] = ApiReply(
+        200,
+        jsonEncode({
+          'items': [
+            {
+              'id': '11111111-1111-1111-1111-111111111111',
+              'trackingNumber': 'TRK-001',
+              'status': 'Delivered',
+              'version': 4,
+              'priceSnapshot': {
+                'total': 540.0,
+                'currency': 'LKR',
+                'pricingVersion': 'v1',
+              },
+              'createdAt': '2026-10-16T08:00:00Z',
+              'updatedAt': '2026-10-16T12:00:00Z',
+              'pickupCity': 'Colombo',
+              'deliveryCity': 'Kandy',
+              'recipientName': 'Nimali Perera',
+              'packageDetails': {'weightKg': 2.5, 'size': 'Medium'},
+              'hasProof': true,
             },
-            'createdAt': '2026-10-16T08:00:00Z',
-            'updatedAt': '2026-10-16T12:00:00Z',
-            'pickupCity': 'Colombo',
-            'deliveryCity': 'Kandy',
-            'recipientName': 'Nimali Perera',
-            'packageDetails': {'weightKg': 2.5, 'size': 'Medium'},
-            'hasProof': true,
-          },
-        ],
-        'totalCount': 1,
-        'page': 1,
-        'pageSize': 20,
-      }),
-      headers: const {},
-    );
+          ],
+          'totalCount': 1,
+          'page': 1,
+          'pageSize': 20,
+        }),
+      );
 
-    final sessions = ValueNotifier(
-      const AppSession.signedIn(
-        userId: 'cust-1',
-        roles: ['Customer'],
-        accessToken: 'tok',
-      ),
-    );
-    final controller = CustomerHistoryController(
-      sessions: sessions,
-      api: TrackingApi(transport),
-    );
+      final sessions = ValueNotifier(
+        const AppSession(principalId: 'cust-1', roles: ['Customer']),
+      );
+      final controller = CustomerHistoryController(
+        sessions: sessions,
+        api: TrackingApi(transport),
+      );
 
-    await controller.setStatusFilter('Delivered');
+      await controller.setStatusFilter('Delivered');
 
-    expect(controller.error, isNull);
-    expect(controller.items, hasLength(1));
-    expect(controller.items.first.trackingNumber, 'TRK-001');
-    expect(transport.lastPath, contains('status=Delivered'));
-  });
+      expect(controller.error, isNull);
+      expect(controller.items, hasLength(1));
+      expect(controller.items.first.trackingNumber, 'TRK-001');
+      expect(transport.lastPath, contains('status=Delivered'));
+    },
+  );
 }
-
