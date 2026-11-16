@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import '../../../../core/network/request_transport.dart';
 import '../domain/tracking_models.dart';
 
@@ -15,6 +18,8 @@ final class TrackingApi {
   Future<CustomerParcelPage> listParcels({
     String? status,
     String? search,
+    DateTime? from,
+    DateTime? to,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -23,6 +28,8 @@ final class TrackingApi {
     if (search != null && search.trim().isNotEmpty) {
       params['search'] = search.trim();
     }
+    if (from != null) params['from'] = from.toUtc().toIso8601String();
+    if (to != null) params['to'] = to.toUtc().toIso8601String();
     final query = Uri(queryParameters: params).query;
     final reply = await transport.send('GET', '/api/v1/parcels?$query');
     if (reply.status != 200) throw _failure(reply);
@@ -46,6 +53,16 @@ final class TrackingApi {
     );
     if (reply.status != 200) throw _failure(reply);
     return ParcelReceiptModel.fromJson(decodeJsonObject(reply.body));
+  }
+
+  Future<Uint8List> downloadReceiptPdf(String parcelId) async {
+    final reply = await transport.send(
+      'GET',
+      '/api/v1/parcels/${Uri.encodeComponent(parcelId)}/receipt?format=pdf',
+      headers: const {'Accept': 'application/pdf'},
+    );
+    if (reply.status != 200) throw _failure(reply);
+    return reply.bodyBytes ?? Uint8List.fromList(utf8.encode(reply.body));
   }
 
   Future<ProofOfDeliveryModel> getProof(String parcelId) async {

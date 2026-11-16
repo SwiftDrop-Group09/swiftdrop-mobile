@@ -45,10 +45,11 @@ class _ProgressRequest extends http.MultipartRequest with http.Abortable {
 }
 
 final class ApiReply {
-  const ApiReply(this.status, this.body, [this.headers = const {}]);
+  const ApiReply(this.status, this.body, [this.headers = const {}, this.bodyBytes]);
   final int status;
   final String body;
   final Map<String, String> headers;
+  final Uint8List? bodyBytes;
 }
 
 /// The IAM integration supplies an authenticated implementation of this port.
@@ -157,10 +158,18 @@ final class HttpRequestTransport
       }
       bytes.addAll(chunk);
     }
+    final u8 = Uint8List.fromList(bytes);
+    String decodedBody;
+    try {
+      decodedBody = utf8.decode(bytes);
+    } catch (_) {
+      decodedBody = '';
+    }
     return ApiReply(
       response.statusCode,
-      utf8.decode(bytes),
+      decodedBody,
       Map.unmodifiable(response.headers),
+      u8,
     );
   }
 

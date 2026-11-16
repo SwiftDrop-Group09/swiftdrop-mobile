@@ -18,6 +18,8 @@ final class CustomerHistoryController extends ChangeNotifier {
   static const int pageSize = 20;
   String? statusFilter;
   String searchQuery = '';
+  DateTime? fromDate;
+  DateTime? toDate;
   bool loading = false;
   String? error;
 
@@ -37,6 +39,8 @@ final class CustomerHistoryController extends ChangeNotifier {
       final result = await api.listParcels(
         status: statusFilter,
         search: searchQuery,
+        from: fromDate,
+        to: toDate,
         page: page,
         pageSize: pageSize,
       );
@@ -62,6 +66,12 @@ final class CustomerHistoryController extends ChangeNotifier {
     await load(refresh: true);
   }
 
+  Future<void> setDateRange(DateTime? from, DateTime? to) async {
+    fromDate = from;
+    toDate = to;
+    await load(refresh: true);
+  }
+
   Future<void> loadNextPage() async {
     if (loading || !hasMore) return;
     page += 1;
@@ -82,6 +92,8 @@ final class CustomerParcelDetailController extends ChangeNotifier {
   String? error;
   Timer? _liveTimer;
 
+  bool get isLivePollingActive => _liveTimer != null && _liveTimer!.isActive;
+
   Future<void> load({bool startLivePolling = true}) async {
     loading = true;
     error = null;
@@ -97,6 +109,7 @@ final class CustomerParcelDetailController extends ChangeNotifier {
           receipt = await api.getReceipt(parcelId);
         } catch (_) {}
         _liveTimer?.cancel();
+        _liveTimer = null;
       } else if (startLivePolling && !isTerminalParcelStatus(detail.status)) {
         _ensurePolling();
       }
@@ -111,14 +124,23 @@ final class CustomerParcelDetailController extends ChangeNotifier {
   }
 
   void _ensurePolling() {
-    _liveTimer ??= Timer.periodic(const Duration(seconds: 6), (_) async {
+    _liveTimer?.cancel();
+    _liveTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
       try {
         final updated = await api.getParcel(parcelId);
         if (updated.version > (parcel?.version ?? 0)) {
           parcel = updated;
-          if (updated.status == 'Delivered') {
+          if (isTerminalParcelStatus(updated.status)) {
             _liveTimer?.cancel();
             _liveTimer = null;
+            if (updated.status == 'Delivered') {
+              try {
+                proof = await api.getProof(parcelId);
+              } catch (_) {}
+              try {
+                receipt = await api.getReceipt(parcelId);
+              } catch (_) {}
+            }
           }
           notifyListeners();
         }
@@ -129,6 +151,7 @@ final class CustomerParcelDetailController extends ChangeNotifier {
   @override
   void dispose() {
     _liveTimer?.cancel();
+    _liveTimer = null;
     super.dispose();
   }
 }

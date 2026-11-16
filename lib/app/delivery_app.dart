@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 
 import '../core/network/request_transport.dart';
 import '../core/session/customer_session.dart';
+import '../features/customer/assistant/data/assistant_api.dart';
+import '../features/customer/assistant/presentation/assistant_controller.dart';
+import '../features/customer/assistant/presentation/assistant_screen.dart';
 import '../features/customer/booking/data/booking_api.dart';
 import '../features/customer/booking/domain/booking_models.dart';
 import '../features/customer/booking/presentation/booking_controller.dart';
@@ -44,6 +47,8 @@ class _MyAppState extends State<MyApp> {
   late final CourierController _courier;
   late final TrackingApi _trackingApi;
   late final CustomerHistoryController _history;
+  late final AssistantController _assistant;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +74,10 @@ class _MyAppState extends State<MyApp> {
       sessions: widget.sessions ?? _ownedSessions!,
       api: _trackingApi,
     );
+    _assistant = AssistantController(
+      api: AssistantApi(transport),
+      sessions: widget.sessions ?? _ownedSessions!,
+    );
   }
 
   @override
@@ -76,6 +85,7 @@ class _MyAppState extends State<MyApp> {
     if (widget.controller == null) _controller.dispose();
     if (widget.courierController == null) _courier.dispose();
     _history.dispose();
+    _assistant.dispose();
     _ownedSessions?.dispose();
     super.dispose();
   }
@@ -106,6 +116,7 @@ class _MyAppState extends State<MyApp> {
         showProfile: widget.profileBuilder != null,
       ),
       '/history': (_) => CustomerHistoryScreen(controller: _history),
+      '/assistant': (_) => AssistantScreen(controller: _assistant),
       '/tracking': (context) {
         final parcelId =
             (ModalRoute.of(context)?.settings.arguments as String?) ?? '';
