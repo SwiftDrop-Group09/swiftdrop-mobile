@@ -120,6 +120,11 @@ class _BookingScreenState extends State<BookingScreen> {
         appBar: AppBar(
           title: const Text('Book a delivery'),
           actions: [
+            IconButton(
+              tooltip: 'Delivery Assistant',
+              onPressed: () => Navigator.pushNamed(context, '/assistant'),
+              icon: const Icon(Icons.auto_awesome_outlined),
+            ),
             if (widget.showProfile)
               IconButton(
                 tooltip: 'My profile',
