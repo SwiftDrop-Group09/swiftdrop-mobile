@@ -417,6 +417,14 @@ class _AssistantScreenState extends State<AssistantScreen> {
                 zones: msg.cards!.zones!,
                 onSelectCity: (city) => _handleSend('How much to send 2 kg to $city?'),
               ),
+
+            if (msg.cards?.deliveryTime != null)
+              MobileDeliveryTimeResultCard(
+                data: msg.cards!.deliveryTime!,
+                onBook: () {
+                  Navigator.of(context).pushNamed('/book');
+                },
+              ),
           ],
         ),
       ),
