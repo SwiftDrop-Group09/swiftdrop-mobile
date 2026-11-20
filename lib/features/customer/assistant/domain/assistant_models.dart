@@ -287,18 +287,61 @@ final class ZonesCardData {
   }
 }
 
+final class DeliveryTimeEstimateCardData {
+  const DeliveryTimeEstimateCardData({
+    required this.pickupCity,
+    required this.deliveryCity,
+    required this.estimatedDuration,
+    required this.estimatedDeliveryDate,
+    required this.serviceSpeed,
+    required this.cutoffTime,
+    required this.minHours,
+    required this.maxHours,
+    required this.routeType,
+    required this.summary,
+  });
+
+  final String pickupCity;
+  final String deliveryCity;
+  final String estimatedDuration;
+  final String estimatedDeliveryDate;
+  final String serviceSpeed;
+  final String cutoffTime;
+  final int minHours;
+  final int maxHours;
+  final String routeType;
+  final String summary;
+
+  factory DeliveryTimeEstimateCardData.fromJson(Map<String, Object?> json) {
+    return DeliveryTimeEstimateCardData(
+      pickupCity: json['pickupCity']?.toString() ?? '',
+      deliveryCity: json['deliveryCity']?.toString() ?? '',
+      estimatedDuration: json['estimatedDuration']?.toString() ?? '',
+      estimatedDeliveryDate: json['estimatedDeliveryDate']?.toString() ?? '',
+      serviceSpeed: json['serviceSpeed']?.toString() ?? 'Standard',
+      cutoffTime: json['cutoffTime']?.toString() ?? '',
+      minHours: (json['minHours'] as num?)?.toInt() ?? 24,
+      maxHours: (json['maxHours'] as num?)?.toInt() ?? 48,
+      routeType: json['routeType']?.toString() ?? '',
+      summary: json['summary']?.toString() ?? '',
+    );
+  }
+}
+
 final class AssistantCards {
   const AssistantCards({
     this.tracking,
     this.parcelList,
     this.quote,
     this.zones,
+    this.deliveryTime,
   });
 
   final TrackingCardData? tracking;
   final ParcelListCardData? parcelList;
   final QuoteCardData? quote;
   final ZonesCardData? zones;
+  final DeliveryTimeEstimateCardData? deliveryTime;
 
   factory AssistantCards.fromJson(Map<String, Object?> json) => AssistantCards(
         tracking: json['tracking'] != null
@@ -319,6 +362,11 @@ final class AssistantCards {
         zones: json['zones'] != null
             ? ZonesCardData.fromJson(
                 (json['zones'] as Map).cast<String, Object?>(),
+              )
+            : null,
+        deliveryTime: json['deliveryTime'] != null
+            ? DeliveryTimeEstimateCardData.fromJson(
+                (json['deliveryTime'] as Map).cast<String, Object?>(),
               )
             : null,
       );
