@@ -1,103 +1,57 @@
 # SwiftDrop Mobile
 
-Flutter Customer/Courier client for SwiftDrop. The app implements
-local and Google authentication, session restoration/rotation, own-profile editing,
-explicit Google linking and logout. Customer/Courier use one session owner; the
-Courier mode requires an actual server-assigned role and grants no privileges.
-See [Identity implementation and verification](docs/identity-handoff.md).
+The Flutter app provides dedicated customer and courier workspaces. Both modes use SwiftDrop Identity for sign-in, session restoration, and profile management. Courier access requires the Courier role assigned by the server.
 
-Authenticated Customers enter booking with the live server zone catalog, and can
-view parcel history, tracking and digital receipts. Courier mode opens assigned
-deliveries, status/failure actions, temporary proof capture/upload and terminal
-history. Both workspaces expose My profile and use the same verified session and
-token-aware HTTP adapter, including multipart proof uploads. Logging out removes
-the workspace and its private state. See [Courier integration](docs/courier-integration.md)
-and the [feature layout](lib/README.md).
+| Mode | Workflows |
+| --- | --- |
+| Customer | Request quotes from the live zone catalog, confirm bookings, track parcels, view history and receipts, and use the delivery assistant. |
+| Courier | Review assignments, update delivery status, capture and upload proof, report failed deliveries, and review completed work. |
 
 ## Requirements
 
-- Flutter SDK 3.x with a bundled Dart SDK that satisfies the `sdk` constraint in `pubspec.yaml` (currently `^3.13.2`). Keep the Flutter version consistent across the team and share the output of `flutter --version` when diagnosing setup differences.
-- Android Studio with the Android SDK Platform, Platform Tools, and Android SDK Command-line Tools installed.
-- An Android emulator or Android device. The project requirements specify Android API level 26 or later.
-- Git and an editor with Flutter/Dart support, such as Android Studio or VS Code.
+- Flutter with a bundled Dart SDK that satisfies the constraint in [pubspec.yaml](pubspec.yaml).
+- Android SDK, an emulator or physical device, and Android API level 26 or later.
+- macOS and Xcode for iOS builds. See the [Identity handoff](docs/identity-handoff.md) for native sign-in configuration.
 
-On Windows, install the Flutter SDK outside this repository (for example, `C:\src\flutter`) and add its `bin` directory to `Path`. Install the Flutter and Dart editor plugins/extensions, then run:
+## Run locally
 
-```powershell
+From the repository root, verify the toolchain and select a connected device.
+
+```sh
 flutter doctor -v
-flutter doctor --android-licenses
-flutter devices
-```
-
-Resolve Android toolchain issues reported by `flutter doctor` before building. See [Flutter's Android setup guide](https://docs.flutter.dev/platform-integration/android/setup?tab=virtual) for current installation steps.
-
-## Run the Identity client
-
-From this folder:
-
-```powershell
 flutter pub get
 flutter devices
+```
+
+Run either workspace with the corresponding `APP_MODE`.
+
+```sh
 flutter run --dart-define=API_BASE_URL=https://gateway.example.test --dart-define=APP_MODE=customer
+flutter run --dart-define=API_BASE_URL=https://gateway.example.test --dart-define=APP_MODE=courier
 ```
 
-Replace the example origin with the team's reachable, trusted HTTPS Gateway
-origin. Select an Android device with `-d` when needed; the SDK and emulator must
-be installed first. Use `APP_MODE=courier` for the same Identity/profile flow with
-Courier authorization status. HTTP, embedded URL credentials, and API subpaths
-in the origin are rejected. No cleartext/TLS-validation exception is provided.
+Replace the example with the trusted HTTPS gateway origin reachable from the device. Use the origin only, without an API path, and pass `-d <device-id>` when selecting among multiple devices.
 
-Google is optional for local password authentication. Set public
-`GOOGLE_SERVER_CLIENT_ID` to the configured Web OAuth ID and register the Android
-package/signing fingerprints with Google. iOS additionally needs
-`GOOGLE_IOS_CLIENT_ID`, its URL scheme and Keychain host setup. No client secret
-belongs in these values. Without the audience configuration Google buttons are
-disabled. Browser/desktop authentication is intentionally unsupported; use React
-for the browser.
+Password sign-in works with the gateway configuration alone. For native Google sign-in, provide the public `GOOGLE_SERVER_CLIENT_ID` and register the Android package and signing fingerprints. iOS also requires `GOOGLE_IOS_CLIENT_ID` and native URL scheme and Keychain configuration. Keep private credentials out of compiled `--dart-define` values. The app stores refresh tokens in native secure storage and keeps access tokens in memory.
 
-Never commit tokens, private signing keys or local secrets. Do not put private
-credentials in `--dart-define`; compiled configuration is not secret. Refresh
-tokens use native secure storage; access tokens remain in memory. Passwords and
-provider credentials are transient inputs, never stored in session state.
+## Develop and verify
 
-## Repository layout
+Application source is under [lib/](lib/README.md), with unit and widget tests in [test/](test/). Keep Android and iOS host configuration in their respective platform directories.
 
-```text
-lib/                    Application source; see [lib/README.md](lib/README.md)
-test/                   Unit and widget tests
-android/                Android host project and build configuration
-ios/                    iOS host project (requires macOS/Xcode to build for iOS)
-web/, windows/, ...     Other Flutter-generated platform hosts
-pubspec.yaml            Dependencies and Flutter package configuration
-pubspec.lock            Resolved app dependencies; commit this file
-analysis_options.yaml   Dart/Flutter lint rules
+```sh
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
 ```
 
-Keep platform-specific changes in the relevant host folder and application features in `lib/`. Do not commit build output, machine-local SDK paths, secrets, or signing files; see `.gitignore`.
+See the [Identity handoff](docs/identity-handoff.md) and [Courier integration guide](docs/courier-integration.md) for setup, role requirements, and workflow checks.
 
-## Team workflow
+## SwiftDrop repositories
 
-1. Start from the team's shared base branch and create a short-lived branch for one feature or fix (for example, `feat/courier-delivery-list`). Do not commit directly to the base branch.
-2. Confirm current endpoint, request/response and authorization contracts before
-   integrating other features. Identity follows the existing REST contracts;
-   canonical tracking uses SSE. Earlier SignalR prose remains a documentation
-   mismatch and does not authorize adding competing realtime infrastructure.
-3. Keep each change focused. Put widgets and screens in their feature, API access behind a repository/data layer, and reusable app-wide code in `core/` or `shared/` as described in [lib/README.md](lib/README.md).
-4. Include or update tests for changed behavior. Run formatting, analysis, and relevant tests before opening a pull request:
-
-   ```powershell
-   dart format lib test
-   flutter analyze
-   flutter test
-   ```
-
-5. Commit the Flutter app's `pubspec.lock` when dependencies change. Use clear commit messages, push the feature branch, and open a pull request for team review.
-
-## Project references
-
-- [SwiftDrop documentation repository](../swiftdrop-docs/README.md)
-- [Software requirements](../swiftdrop-docs/requirements/srs.md)
-- [REST API](../swiftdrop-docs/api/rest-api.md)
-- [GraphQL API](../swiftdrop-docs/api/graphql-api.md)
-- [Real-time tracking](../swiftdrop-docs/integration/realtime-tracking.md)
-- [SignalR/WebSocket protocol](../swiftdrop-docs/api/websocket-protocol.md)
+| Repository | Responsibility |
+| --- | --- |
+| [Backend](https://github.com/SwiftDrop-Group09/swiftdrop-backend) | Gateway, APIs, background workers, and integration contracts |
+| [Web frontend](https://github.com/SwiftDrop-Group09/swiftdrop-frontend) | React web application and role-based workspaces |
+| [Mobile app](https://github.com/SwiftDrop-Group09/swiftdrop-mobile) | Flutter application for customers and couriers |
+| [Infrastructure](https://github.com/SwiftDrop-Group09/swiftdrop-infra) | Local development, Docker Compose, and Kubernetes deployment |
+| [Project documentation](https://github.com/SwiftDrop-Group09/swiftdrop-docs) | Requirements, architecture, integration design, and assessment evidence |
